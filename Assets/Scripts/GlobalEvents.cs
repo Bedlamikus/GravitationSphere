@@ -5,4 +5,6 @@ public class GlobalEvents : MonoBehaviour
 {
     public static UnityEvent<float> AddTorqueX = new();
     public static UnityEvent<float> AddTorqueZ = new();
+
+    public static UnityEvent NextPlatform = new();
 }
