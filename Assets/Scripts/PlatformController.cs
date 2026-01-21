@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class PlatformController : MonoBehaviour
 {
-    [SerializeField] private Transform[] targets;
+    [SerializeField] private RotatingCube[] targets;
     [SerializeField] private CameraController cameraController;
 
     private int currentTargetIndex = 0;
@@ -19,9 +19,9 @@ public class PlatformController : MonoBehaviour
         {
             if (currentTargetIndex != 0)
             {
-                targets[currentTargetIndex - 1].gameObject.SetActive(false);
+                targets[currentTargetIndex - 1].Hide();
             }
-            cameraController.SetTarget(targets[currentTargetIndex]);
+            cameraController.SetTarget(targets[currentTargetIndex].GetTarget());
             currentTargetIndex++;
         }
     }

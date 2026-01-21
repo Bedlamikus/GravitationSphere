@@ -11,9 +11,17 @@ public class RotatingCube : MonoBehaviour
     [SerializeField] private float minAngleZ = -10f;
     [SerializeField] private float torqueForce = 10f;
     [SerializeField] private FloatingJoystick joystick;
+    [SerializeField] private Sphere sphere;
+    [SerializeField] private bool sphereTarget;
 
     private float currentAngleX;
     private float currentAngleZ;
+    private Vector3 startPosition;
+
+    private void Start()
+    {
+        startPosition = transform.position;
+    }
 
     private void AddTorqueX(float sign)
     {
@@ -59,6 +67,8 @@ public class RotatingCube : MonoBehaviour
 
     private void Update()
     {
+        if (cubeRigidbody == null) return;
+
         if (joystick.Vertical > 0)
         {
             AddTorqueX(1);
@@ -75,5 +85,26 @@ public class RotatingCube : MonoBehaviour
         {
             AddTorqueZ(1);
         }
+
+        transform.position = startPosition;
+    }
+
+    public void Hide()
+    {
+        gameObject.SetActive(false);
+    }
+
+    public void Show()
+    {
+        gameObject.SetActive(true);
+    }
+
+    public Transform GetTarget()
+    {
+        if (sphereTarget)
+        {
+            return sphere.transform;
+        }
+        return transform;
     }
 }
