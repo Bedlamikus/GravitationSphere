@@ -30,6 +30,10 @@ public class PlatformController : MonoBehaviour
     private void RestartLevel()
     {
         currentTargetIndex = 0;
+        foreach (var platform  in targets)
+        {
+            platform.gameObject.SetActive(true);
+        }
         SetNextTarget();
     }
 }

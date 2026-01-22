@@ -17,6 +17,7 @@ public class Sphere : MonoBehaviour
         startPoint = transform.position;
         StartCoroutine(FreezeRoutine());
         StartCoroutine(SetFrozen());
+        GlobalEvents.StartLevel.AddListener(StartLevel);
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -58,13 +59,43 @@ public class Sphere : MonoBehaviour
         if (isFrozen)
         {
             var rb = GetComponent<Rigidbody>();
+            rb.Sleep();
+            yield return null;
             rb.constraints = RigidbodyConstraints.FreezeAll;
-            transform.position = startPoint;
-            transform.rotation = Quaternion.identity;
-            
+            rb.velocity = Vector3.zero;
+            rb.isKinematic = true;
+
             GlobalEvents.RestartLevel.Invoke();
-            rb.constraints = RigidbodyConstraints.None;
+            //rb.constraints = RigidbodyConstraints.None;
         }
+    }
+
+    private void StartLevel()
+    {
+        StartCoroutine(StartAganeRoutine());
+    }
+
+    private IEnumerator StartAganeRoutine()
+    {
+        var rb = GetComponent<Rigidbody>();
+        rb.isKinematic = false;
+        rb.position = startPoint;
+        rb.rotation = Quaternion.identity;
+
+        // —брос скоростей
+        rb.velocity = Vector3.zero;
+        rb.angularVelocity = Vector3.zero;
+
+        
+        Physics.SyncTransforms(); 
+        
+        yield return null;
+        rb.constraints = RigidbodyConstraints.None;
+        
+        timer = 0;
+
+        isFrozen = false;
+        StartCoroutine(FreezeRoutine());
     }
 
     private IEnumerator SetFrozen()
