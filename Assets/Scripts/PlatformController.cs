@@ -11,6 +11,7 @@ public class PlatformController : MonoBehaviour
     {
         SetNextTarget();
         GlobalEvents.NextPlatform.AddListener(SetNextTarget);
+        GlobalEvents.RestartLevel.AddListener(RestartLevel);
     }
 
     private void SetNextTarget()
@@ -24,5 +25,11 @@ public class PlatformController : MonoBehaviour
             cameraController.SetTarget(targets[currentTargetIndex].GetTarget());
             currentTargetIndex++;
         }
+    }
+
+    private void RestartLevel()
+    {
+        currentTargetIndex = 0;
+        SetNextTarget();
     }
 }

@@ -7,4 +7,5 @@ public class GlobalEvents : MonoBehaviour
     public static UnityEvent<float> AddTorqueZ = new();
 
     public static UnityEvent NextPlatform = new();
+    public static UnityEvent RestartLevel = new();
 }
