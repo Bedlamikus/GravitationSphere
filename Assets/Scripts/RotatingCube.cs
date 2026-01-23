@@ -69,14 +69,14 @@ public class RotatingCube : MonoBehaviour
     {
         if (cubeRigidbody == null) return;
 
-        if (joystick.Vertical > 0)
-        {
-            AddTorqueX(1);
-        }
-        else if (joystick.Vertical < 0)
-        {
-            AddTorqueX(-1);
-        }
+        //if (joystick.Vertical > 0)
+        //{
+        //    AddTorqueX(1);
+        //}
+        //else if (joystick.Vertical < 0)
+        //{
+        //    AddTorqueX(-1);
+        //}
 
         if (joystick.Horizontal > 0) {
             AddTorqueZ(-1);

@@ -3,7 +3,7 @@ using UnityEngine;
 public class PlatformController : MonoBehaviour
 {
     [SerializeField] private RotatingCube[] targets;
-    [SerializeField] private CameraController cameraController;
+    //[SerializeField] private CameraController cameraController;
 
     private int currentTargetIndex = 0;
 
@@ -22,7 +22,7 @@ public class PlatformController : MonoBehaviour
             {
                 targets[currentTargetIndex - 1].Hide();
             }
-            cameraController.SetTarget(targets[currentTargetIndex].GetTarget());
+            //cameraController.SetTarget(targets[currentTargetIndex].GetTarget());
             currentTargetIndex++;
         }
     }

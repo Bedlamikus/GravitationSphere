@@ -7,6 +7,9 @@ public class Sphere : MonoBehaviour
     [SerializeField] private int defaultMask;
     [SerializeField] private int holeMask;
     [SerializeField] private float timeToFreeze = 10f;
+    [SerializeField] private float speed = 5f;
+    [SerializeField] private float torqueForce = 1f;
+    [SerializeField] private FloatingJoystick joystick;
 
     private bool isFrozen = false;
     private float timer = 0f;
