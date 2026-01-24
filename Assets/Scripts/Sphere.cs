@@ -4,109 +4,97 @@ using UnityEngine;
 
 public class Sphere : MonoBehaviour
 {
-    [SerializeField] private int defaultMask;
-    [SerializeField] private int holeMask;
-    [SerializeField] private float timeToFreeze = 10f;
     [SerializeField] private float speed = 5f;
     [SerializeField] private float torqueForce = 1f;
     [SerializeField] private FloatingJoystick joystick;
+    [SerializeField] private float fallThreshold = -10f;
+    [SerializeField] private PlatformController platformController;
 
-    private bool isFrozen = false;
-    private float timer = 0f;
+    private Rigidbody rb;
     private Vector3 startPoint;
 
     private void Start()
     {
         startPoint = transform.position;
-        StartCoroutine(FreezeRoutine());
-        StartCoroutine(SetFrozen());
-        GlobalEvents.StartLevel.AddListener(StartLevel);
-    }
 
-    private void OnCollisionEnter(Collision collision)
-    {
-        isFrozen = false;
-        timer = 0f;
-    }
-
-    private void OnCollisionExit(Collision collision)
-    {
-        isFrozen = false;
-        timer = 0f;
-    }
-
-    private void OnCollisionStay(Collision collision)
-    {
-        isFrozen = false;
-        timer = 0f;
-    }
-
-    public void SetHoleMask()
-    {
-        gameObject.layer = holeMask;
-    }
-
-    public void SetDefaultMask()
-    {
-        gameObject.layer = defaultMask;
-    }
-
-    private IEnumerator FreezeRoutine()
-    {
-        while (timer < timeToFreeze)
+        rb = GetComponent<Rigidbody>();
+        if (rb != null)
         {
-            timer += Time.deltaTime;
-            yield return null;
+            rb.maxAngularVelocity = speed;
         }
         
-        if (isFrozen)
+        GlobalEvents.StartLevel.AddListener(Unfreeze);
+    }
+
+    private void OnDestroy()
+    {
+        GlobalEvents.StartLevel.RemoveListener(Unfreeze);
+    }
+
+    private void FixedUpdate()
+    {
+        if (joystick == null) return;
+
+        if (rb == null || rb.isKinematic) return;
+
+        // Проверяем, не упала ли сфера слишком низко
+        if (transform.position.y < fallThreshold)
         {
-            var rb = GetComponent<Rigidbody>();
-            rb.Sleep();
-            yield return null;
-            rb.constraints = RigidbodyConstraints.FreezeAll;
+            ReturnToCurrentPlatform();
+            return;
+        }
+
+        float verticalInput = joystick.Vertical;
+        float horizontalInput = joystick.Horizontal;
+
+        if (Mathf.Abs(verticalInput) > 0.01f)
+        {
+            rb.AddTorque(Vector3.right * torqueForce * verticalInput, ForceMode.Force);
+        }
+
+        if (Mathf.Abs(horizontalInput) > 0.01f)
+        {
+            rb.AddTorque(-Vector3.forward * torqueForce * horizontalInput, ForceMode.Force);
+        }
+        
+    }
+
+    public void MoveToPosition(Vector3 newPosition)
+    {
+        transform.position = newPosition;
+    }
+
+    public void Freeze()
+    {
+        rb.isKinematic = true;
+    }
+
+    private void Unfreeze()
+    {
+        if (rb != null)
+        {
+            rb.isKinematic = false;
             rb.velocity = Vector3.zero;
-            rb.isKinematic = true;
-
-            GlobalEvents.RestartLevel.Invoke();
-            //rb.constraints = RigidbodyConstraints.None;
+            rb.angularVelocity = Vector3.zero;
+            rb.constraints = RigidbodyConstraints.None;
         }
     }
 
-    private void StartLevel()
+    private void ReturnToCurrentPlatform()
     {
-        StartCoroutine(StartAganeRoutine());
-    }
+        if (platformController == null) return;
 
-    private IEnumerator StartAganeRoutine()
-    {
-        var rb = GetComponent<Rigidbody>();
-        rb.isKinematic = false;
-        rb.position = startPoint;
-        rb.rotation = Quaternion.identity;
-
-        // ����� ���������
-        rb.velocity = Vector3.zero;
-        rb.angularVelocity = Vector3.zero;
-
-        
-        Physics.SyncTransforms(); 
-        
-        yield return null;
-        rb.constraints = RigidbodyConstraints.None;
-        
-        timer = 0;
-
-        isFrozen = false;
-        StartCoroutine(FreezeRoutine());
-    }
-
-    private IEnumerator SetFrozen()
-    {
-        while (true)
+        Platform currentPlatform = platformController.GetCurrentPlatform();
+        if (currentPlatform != null && currentPlatform.GetSphereStartPosition() != null)
         {
-            isFrozen = true;
-            yield return new WaitForSeconds(1f);
+            Vector3 platformStartPos = currentPlatform.GetSphereStartPosition().position;
+            
+            // Сбрасываем физику и перемещаем сферу
+            rb.velocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+            rb.position = platformStartPos;
+            rb.rotation = Quaternion.identity;
+            Physics.SyncTransforms();
         }
     }
 }

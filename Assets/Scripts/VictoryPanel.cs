@@ -7,7 +7,7 @@ public class VictoryPanel : MonoBehaviour
 
     private void Start()
     {
-        GlobalEvents.RestartLevel.AddListener(Show);
+        GlobalEvents.GameOver.AddListener(Show);
         aganeButton.onClick.AddListener(Agane);
         gameObject.SetActive(false);
     }

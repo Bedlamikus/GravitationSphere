@@ -10,7 +10,7 @@ public class UILevelText : MonoBehaviour
     private void Awake()
     {
         GlobalEvents.NextPlatform.AddListener(SetLvlText);
-        GlobalEvents.RestartLevel.AddListener(RestartLevel);
+        GlobalEvents.GameOver.AddListener(RestartLevel);
         SetLvlText();
     }
 

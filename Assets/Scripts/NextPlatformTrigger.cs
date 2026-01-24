@@ -7,7 +7,7 @@ public class NextPlatformTrigger : MonoBehaviour
         var sphere = other.GetComponent<Sphere>();
         if (sphere == null) return;
 
-        sphere.SetDefaultMask();
+        //sphere.SetDefaultMask();
 
         GlobalEvents.NextPlatform.Invoke();
     }
