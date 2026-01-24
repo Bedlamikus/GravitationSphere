@@ -7,7 +7,7 @@ public class Sphere : MonoBehaviour
     [SerializeField] private float speed = 5f;
     [SerializeField] private float torqueForce = 1f;
     [SerializeField] private FloatingJoystick joystick;
-    [SerializeField] private float fallThreshold = -10f;
+    [SerializeField] private float fallOffset = 10f;
     [SerializeField] private PlatformController platformController;
     [Header("Прыжок")]
     [SerializeField] private float jumpForce = 8f;
@@ -42,19 +42,28 @@ public class Sphere : MonoBehaviour
     private void FixedUpdate()
     {
         if (joystick == null) return;
-
         if (rb == null || rb.isKinematic) return;
 
-        // Проверяем, не упала ли сфера слишком низко
-        if (transform.position.y < fallThreshold)
+        // Проверяем падение относительно текущей платформы
+        if (platformController != null)
         {
-            ReturnToCurrentPlatform();
-            return;
+            Platform currentPlatform = platformController.GetCurrentPlatform();
+            if (currentPlatform != null)
+            {
+                float platformY = currentPlatform.transform.position.y;
+                float fallThreshold = platformY - fallOffset;
+                
+                if (transform.position.y < fallThreshold)
+                {
+                    ReturnToCurrentPlatform();
+                    return;
+                }
+            }
         }
 
         float verticalInput = joystick.Vertical;
         float horizontalInput = joystick.Horizontal;
-
+        
         if (Mathf.Abs(verticalInput) > 0.01f)
         {
             rb.AddTorque(Vector3.right * torqueForce * verticalInput, ForceMode.Force);
@@ -80,7 +89,8 @@ public class Sphere : MonoBehaviour
         if (rb != null)
         {
             Vector3 p = rb.position;
-            if (Mathf.Abs(p.z - referenceZ) > 0.0001f)
+            float zDiff = Mathf.Abs(p.z - referenceZ);
+            if (zDiff > 0.01f)
             {
                 p.z = referenceZ;
                 rb.position = p;
@@ -100,9 +110,14 @@ public class Sphere : MonoBehaviour
         referenceZ = newPosition.z;
         if (rb != null)
         {
-            rb.velocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
+            // Устанавливаем скорости только если rigidbody не кинематический
+            if (!rb.isKinematic)
+            {
+                rb.velocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+            }
             rb.position = newPosition;
+            rb.WakeUp();
             Physics.SyncTransforms();
         }
         else
@@ -150,11 +165,17 @@ public class Sphere : MonoBehaviour
             Vector3 platformStartPos = currentPlatform.GetSphereStartPosition().position;
             referenceZ = platformStartPos.z;
 
-            rb.velocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
-            rb.position = platformStartPos;
-            rb.rotation = Quaternion.identity;
-            Physics.SyncTransforms();
+            if (rb != null)
+            {
+                if (!rb.isKinematic)
+                {
+                    rb.velocity = Vector3.zero;
+                    rb.angularVelocity = Vector3.zero;
+                }
+                rb.position = platformStartPos;
+                rb.rotation = Quaternion.identity;
+                Physics.SyncTransforms();
+            }
         }
     }
 }
