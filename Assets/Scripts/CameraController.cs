@@ -11,6 +11,8 @@ public class CameraController : MonoBehaviour
     private float leadSmoothTime = 0.15f;
     [SerializeField] [Tooltip("Макс. скорость прироста lead-смещения (единиц/сек)")]
     private float leadGrowthSpeed = 20f;
+    [SerializeField] [Tooltip("При расстоянии больше этого значения - мгновенный телепорт")]
+    private float maxTeleportDistance = 50f;
 
     private Vector3 velocity;
     private Vector3 currentLeadOffset;
@@ -48,6 +50,23 @@ public class CameraController : MonoBehaviour
 
         Vector3 targetPosition = target.position + offset + currentLeadOffset;
         float distance = Vector3.Distance(transform.position, targetPosition);
+        
+        // При очень большом расстоянии - мгновенный телепорт ближе к цели
+        if (distance > maxTeleportDistance)
+        {
+            Debug.Log($"Camera teleport: расстояние {distance:F1} > {maxTeleportDistance} - мгновенный телепорт на 85%");
+            Vector3 newPos = Vector3.Lerp(transform.position, targetPosition, 0.85f);
+            transform.position = newPos;
+            
+            // Сбрасываем скорости
+            velocity = Vector3.zero;
+            currentLeadOffset = Vector3.zero;
+            leadVelocity = Vector3.zero;
+            
+            // Пересчитываем расстояние
+            distance = Vector3.Distance(transform.position, targetPosition);
+            Debug.Log($"Camera teleport: камера перемещена, новое расстояние = {distance:F1}");
+        }
 
         float effectiveMaxSpeed = distance > DistanceThreshold
             ? maxSpeed * (distance / DistanceThreshold)

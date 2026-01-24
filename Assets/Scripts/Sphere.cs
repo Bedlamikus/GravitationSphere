@@ -124,6 +124,7 @@ public class Sphere : MonoBehaviour
         {
             transform.position = newPosition;
         }
+
     }
 
     public void Freeze()
