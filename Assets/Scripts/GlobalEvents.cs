@@ -10,4 +10,5 @@ public class GlobalEvents : MonoBehaviour
     public static UnityEvent RestartLevel = new();
     public static UnityEvent StartLevel = new();
     public static UnityEvent GameOver = new();
+    public static UnityEvent CharacterInPortal = new();
 }
