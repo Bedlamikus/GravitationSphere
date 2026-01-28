@@ -156,6 +156,21 @@ public class RagdollCharacter : MonoBehaviour
             Debug.LogWarning($"[RagdollCharacter] Аниматор не назначен, отключать нечего.");
         }
 
+        // Включаем обратно коллайдеры у объектов из списка джойнтов
+        if (jointsToConfigure != null)
+        {
+            foreach (var j in jointsToConfigure)
+            {
+                if (j == null) continue;
+                var colliders = j.GetComponents<Collider>();
+                foreach (var col in colliders)
+                {
+                    if (col != null)
+                        col.enabled = true;
+                }
+            }
+        }
+
         if (ragdollRigidbodies == null) return;
 
         foreach (var rb in ragdollRigidbodies)
@@ -223,33 +238,77 @@ public class RagdollCharacter : MonoBehaviour
         foreach (var rb in ragdollRigidbodies)
         {
             if (rb == null) continue;
+            if (!rb.isKinematic)
+            {
+                rb.velocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+            }
             rb.isKinematic = true;
-            rb.velocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
         }
     }
 
     /// <summary>
-    /// Вызывается при входе в портал: родитель в точку портала, плавный возврат костей в исходную позу, включение аниматора, на следующем кадре State = 1.
+    /// Простой телепорт: перемещает родительский объект в точку портала.
     /// </summary>
-    public void EnterPortal(Transform portalPoint)
+    public void SimpleTeleport(Transform portalPoint)
     {
         if (portalPoint == null) return;
         if (_rootForPortal == null) _rootForPortal = mainParent != null ? mainParent : transform;
-
-        _inputDisabled = true;
-
-        GlobalEvents.CharacterInPortal.Invoke();
-
-        StopAllCoroutines();
-        StartCoroutine(ReturnBonesAndEnableAnimator(portalPoint));
+        _rootForPortal.position = portalPoint.position;
+        _rootForPortal.rotation = portalPoint.rotation;
     }
 
-    private IEnumerator ReturnBonesAndEnableAnimator(Transform portalPoint)
+    /// <summary>
+    /// Выход из рэгдолла с установкой State = 0 в аниматоре.
+    /// </summary>
+    public void ExitRagdollWithState0()
+    {
+        DeactivateRagdoll();
+        if (animator != null && !string.IsNullOrEmpty(animatorStateParamName))
+            animator.SetInteger(animatorStateParamName, 0);
+    }
+
+    /// <summary>
+    /// Разрешить снова реагировать на ввод (и входить в рэгдолл) через заданную задержку.
+    /// Используем после прилёта на новую платформу.
+    /// </summary>
+    public void EnableRagdollInputAfterDelay(float delaySeconds)
+    {
+        StartCoroutine(EnableRagdollInputAfterDelayCoroutine(delaySeconds));
+    }
+
+    private IEnumerator EnableRagdollInputAfterDelayCoroutine(float delaySeconds)
+    {
+        yield return new WaitForSeconds(delaySeconds);
+        _inputDisabled = false;
+    }
+
+    /// <summary>
+    /// Возврат костей в исходную позу, включение аниматора, поворот к камере, на следующем кадре State = 1.
+    /// Сначала переносит капсулу (родителя) в заданную точку (обычно сам триггер), а уже потом собирает кости вокруг неё.
+    /// Вызывается из NextPlatformTrigger.
+    /// </summary>
+    public void ReturnBonesAndEnableAnimator(Transform assemblePoint)
+    {
+        if (_rootForPortal == null) _rootForPortal = mainParent != null ? mainParent : transform;
+        StopAllCoroutines();
+        StartCoroutine(ReturnBonesAndEnableAnimatorCoroutine(assemblePoint));
+    }
+
+    private IEnumerator ReturnBonesAndEnableAnimatorCoroutine(Transform assemblePoint)
     {
         _ragdollActive = false;
+        _inputDisabled = true;
 
         Transform root = _rootForPortal;
+
+        // Сначала переносим капсулу (родителя) в нужное место (например, сам триггер next platform),
+        // потом уже возвращаем кости к исходной позе относительно новой позиции капсулы.
+        if (assemblePoint != null)
+        {
+            root.position = assemblePoint.position;
+            root.rotation = assemblePoint.rotation;
+        }
 
         // Отключаем все Rigidbody из списка: сначала нулевые скорости, затем кинематика
         if (ragdollRigidbodies != null)
@@ -280,9 +339,6 @@ public class RagdollCharacter : MonoBehaviour
                 }
             }
         }
-
-        root.position = portalPoint.position;
-        root.rotation = portalPoint.rotation;
 
         if (_bonesToReset == null || _bonesToReset.Length == 0)
         {

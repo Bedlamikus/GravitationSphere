@@ -14,16 +14,18 @@ public class TeleportTrigger : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (target == null) return;
-
         var character = other.GetComponentInParent<RagdollCharacter>();
         if (character != null)
         {
             if (portalVisual != null)
                 portalVisual.SetActive(false);
-            character.EnterPortal(target);
+            // Персонажа переносим в позицию самого триггера (портала)
+            character.SimpleTeleport(transform);
+            character.ExitRagdollWithState0();
             return;
         }
+
+        if (target == null) return;
 
         var sphere = other.GetComponent<Sphere>();
         if (sphere == null) return;

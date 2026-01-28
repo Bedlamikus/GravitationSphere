@@ -4,11 +4,15 @@ public class PlatformController : MonoBehaviour
 {
     [SerializeField] private Platform[] platforms;
     [SerializeField] private Sphere sphere;
+    [SerializeField] private RagdollCharacter character;
 
     private int currentTargetIndex = 0;
 
     private void Start()
     {
+        if (character == null)
+            character = FindObjectOfType<RagdollCharacter>();
+
         SetNextTarget();
         GlobalEvents.NextPlatform.AddListener(SetNextTarget);
         GlobalEvents.RestartLevel.AddListener(RestartLevel);
@@ -23,12 +27,23 @@ public class PlatformController : MonoBehaviour
                 platforms[currentTargetIndex - 1].Hide();
             }
             
+            var nextStart = platforms[currentTargetIndex].GetSphereStartPosition();
+
             // Переносим сферу на следующую платформу
-            if (sphere != null && platforms[currentTargetIndex].GetSphereStartPosition() != null)
+            if (sphere != null && nextStart != null)
             {
-                sphere.MoveToPosition(platforms[currentTargetIndex].GetSphereStartPosition().position);
+                sphere.MoveToPosition(nextStart.position);
             }
-            
+
+            // Переносим персонажа на стартовую точку новой платформы и выставляем аниматор State = 0
+            if (character != null && nextStart != null)
+            {
+                character.SimpleTeleport(nextStart);
+                character.ExitRagdollWithState0();
+                // Через секунду после прилёта снова разрешаем управление рэгдоллом
+                character.EnableRagdollInputAfterDelay(1f);
+            }
+
             //cameraController.SetTarget(targets[currentTargetIndex].GetTarget());
             currentTargetIndex++;
         }
