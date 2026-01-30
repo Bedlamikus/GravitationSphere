@@ -16,4 +16,16 @@ public static class Currency
     {
         return PlayerPrefs.GetInt(CurrencyKey, 0);
     }
+    
+    public static bool TrySpendCurrency(int amount)
+    {
+        int current = GetCurrency();
+        if (current < amount)
+            return false;
+        
+        current -= amount;
+        PlayerPrefs.SetInt(CurrencyKey, current);
+        PlayerPrefs.Save();
+        return true;
+    }
 }

@@ -4,6 +4,12 @@ public class NextPlatformTrigger : MonoBehaviour
 {
     [Tooltip("Визуальная часть триггера следующей платформы. Отключается после входа персонажа.")]
     [SerializeField] private GameObject visual;
+    
+    [Tooltip("Точка позиционирования игрока. Если не задана, используется позиция самого триггера.")]
+    [SerializeField] private Transform playerPositionPoint;
+    
+    [Tooltip("Цена прохода через триггер. Если у игрока недостаточно денег, триггер не сработает.")]
+    [SerializeField] private int price = 0;
 
     private bool _rewardGranted;
 
@@ -20,11 +26,28 @@ public class NextPlatformTrigger : MonoBehaviour
         var character = other.GetComponentInParent<RagdollCharacter>();
         if (character != null)
         {
+            // Проверяем, достаточно ли у игрока денег (только для персонажа)
+            if (price > 0)
+            {
+                if (!Currency.TrySpendCurrency(price))
+                {
+                    // Недостаточно денег - триггер не срабатывает
+                    GlobalEvents.NotEnoughCurrency.Invoke();
+                    return;
+                }
+                else
+                {
+                    // Успешное списание денег
+                    GlobalEvents.CurrencySpent.Invoke();
+                }
+            }
+            
             if (visual != null)
                 visual.SetActive(false);
 
-            // Собираем персонажа в позиции самого триггера (assemblePoint = transform)
-            character.ReturnBonesAndEnableAnimator(transform);
+            // Собираем персонажа в заданной точке позиционирования или в позиции триггера
+            Transform assemblePoint = playerPositionPoint != null ? playerPositionPoint : transform;
+            character.ReturnBonesAndEnableAnimator(assemblePoint);
             GlobalEvents.ShowNextPlatformEvent.Invoke();
 
             GrantPlatformTriggerReward(character.transform.position);
