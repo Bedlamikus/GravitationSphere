@@ -14,6 +14,8 @@ public class VictoryPanel : MonoBehaviour
 
     private void Agane()
     {
+        // Сбрасываем уровень/платформы на стартовую, а затем "запускаем" уровень.
+        GlobalEvents.RestartLevel.Invoke();
         GlobalEvents.StartLevel.Invoke();
         gameObject.SetActive(false);
     }

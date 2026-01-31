@@ -20,9 +20,20 @@ public class CurrencyRewardOnImpact : MonoBehaviour
     private Rigidbody _rb;
     private float _lastRewardTime = -999f;
 
+    private bool _poseCaptured;
+    private Vector3 _initialLocalPosition;
+    private Quaternion _initialLocalRotation;
+
     private void Awake()
     {
         _rb = GetComponent<Rigidbody>();
+        CaptureInitialPose();
+    }
+
+    private void OnEnable()
+    {
+        CaptureInitialPose();
+        RestoreInitialPose();
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -48,6 +59,36 @@ public class CurrencyRewardOnImpact : MonoBehaviour
         GlobalEvents.CurrencyImpactReward.Invoke(hitPoint, reward);
 
         _lastRewardTime = Time.time;
+    }
+
+    private void CaptureInitialPose()
+    {
+        if (_poseCaptured) return;
+        _poseCaptured = true;
+
+        _initialLocalPosition = transform.localPosition;
+        _initialLocalRotation = transform.localRotation;
+    }
+
+    private void RestoreInitialPose()
+    {
+        Transform parent = transform.parent;
+        Vector3 worldPos = parent != null ? parent.TransformPoint(_initialLocalPosition) : _initialLocalPosition;
+        Quaternion worldRot = parent != null ? parent.rotation * _initialLocalRotation : _initialLocalRotation;
+
+        if (_rb != null)
+        {
+            _rb.velocity = Vector3.zero;
+            _rb.angularVelocity = Vector3.zero;
+            _rb.position = worldPos;
+            _rb.rotation = worldRot;
+            Physics.SyncTransforms();
+        }
+        else
+        {
+            transform.position = worldPos;
+            transform.rotation = worldRot;
+        }
     }
 
     private float GetImpactStrength(Collision collision)

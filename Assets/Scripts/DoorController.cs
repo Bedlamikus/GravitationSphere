@@ -6,6 +6,10 @@ using UnityEngine;
 /// </summary>
 public class DoorController : MonoBehaviour
 {
+    [Header("Связь с триггером")]
+    [Tooltip("Триггер, который должен открывать именно эту дверь.")]
+    [SerializeField] private NextPlatformTrigger trigger;
+
     [Header("Настройки вращения")]
     [Tooltip("Локальная ось вращения (X, Y или Z)")]
     [SerializeField] private Axis rotationAxis = Axis.Y;
@@ -23,7 +27,7 @@ public class DoorController : MonoBehaviour
     [Tooltip("Кривая анимации закрытия (0 = открыто, 1 = закрыто)")]
     [SerializeField] private AnimationCurve closeCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
     
-    private Vector3 _initialRotation;
+    private Quaternion _initialLocalRotation;
     private bool _isOpen;
     private bool _isAnimating;
     private float _currentAnimationTime;
@@ -37,35 +41,26 @@ public class DoorController : MonoBehaviour
     
     private void Awake()
     {
-        // Сохраняем исходные углы при первом создании
-        _initialRotation = transform.localEulerAngles;
+        // Сохраняем исходное локальное вращение при первом создании
+        _initialLocalRotation = transform.localRotation;
     }
-    
-    private void Start()
-    {
-        // Подписываемся на событие показа кнопки следующей платформы
-        if (GlobalEvents.ShowNextPlatformEvent != null)
-        {
-            GlobalEvents.ShowNextPlatformEvent.AddListener(OnShowNextPlatform);
-        }
-    }
-    
+
     private void OnEnable()
     {
-        // Возвращаем исходные углы
-        transform.localEulerAngles = _initialRotation;
+        // Возвращаем исходное вращение МГНОВЕННО (без анимации)
+        transform.localRotation = _initialLocalRotation;
         _isOpen = false;
         _isAnimating = false;
         _currentAnimationTime = 0f;
+
+        if (trigger != null)
+            trigger.OnActivated.AddListener(OpenDoor);
     }
-    
-    private void OnDestroy()
+
+    private void OnDisable()
     {
-        // Отписываемся от события
-        if (GlobalEvents.ShowNextPlatformEvent != null)
-        {
-            GlobalEvents.ShowNextPlatformEvent.RemoveListener(OnShowNextPlatform);
-        }
+        if (trigger != null)
+            trigger.OnActivated.RemoveListener(OpenDoor);
     }
     
     private void Update()
@@ -98,30 +93,15 @@ public class DoorController : MonoBehaviour
             : Mathf.Lerp(openAngle, 0f, curveValue);
         
         // Применяем вращение вокруг выбранной оси
-        Vector3 newRotation = _initialRotation;
-        switch (rotationAxis)
+        Vector3 axis = rotationAxis switch
         {
-            case Axis.X:
-                newRotation.x += currentAngle;
-                break;
-            case Axis.Y:
-                newRotation.y += currentAngle;
-                break;
-            case Axis.Z:
-                newRotation.z += currentAngle;
-                break;
-        }
-        
-        transform.localEulerAngles = newRotation;
-    }
-    
-    private void OnShowNextPlatform()
-    {
-        if (_isAnimating || _isOpen) return;
-        
-        _isOpen = true;
-        _isAnimating = true;
-        _currentAnimationTime = 0f;
+            Axis.X => Vector3.right,
+            Axis.Y => Vector3.up,
+            Axis.Z => Vector3.forward,
+            _ => Vector3.up
+        };
+
+        transform.localRotation = _initialLocalRotation * Quaternion.AngleAxis(currentAngle, axis);
     }
     
     /// <summary>

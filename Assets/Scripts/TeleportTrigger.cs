@@ -19,9 +19,12 @@ public class TeleportTrigger : MonoBehaviour
         {
             if (portalVisual != null)
                 portalVisual.SetActive(false);
-            // Персонажа переносим в позицию самого триггера (портала)
-            character.SimpleTeleport(transform);
+            // Персонажа переносим в точку назначения портала (если задана),
+            // иначе — в позицию самого триггера.
+            character.SimpleTeleport(target != null ? target : transform);
             character.ExitRagdollWithState0();
+            character.EnableRagdollInputAfterDelay(0f);
+            GlobalEvents.CharacterInPortal.Invoke();
             return;
         }
 

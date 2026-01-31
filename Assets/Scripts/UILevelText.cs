@@ -11,7 +11,15 @@ public class UILevelText : MonoBehaviour
     {
         GlobalEvents.NextPlatform.AddListener(SetLvlText);
         GlobalEvents.GameOver.AddListener(RestartLevel);
+        GlobalEvents.RestartLevel.AddListener(RestartLevel);
         SetLvlText();
+    }
+
+    private void OnDestroy()
+    {
+        GlobalEvents.NextPlatform.RemoveListener(SetLvlText);
+        GlobalEvents.GameOver.RemoveListener(RestartLevel);
+        GlobalEvents.RestartLevel.RemoveListener(RestartLevel);
     }
 
     private void SetLvlText()
@@ -23,5 +31,6 @@ public class UILevelText : MonoBehaviour
     private void RestartLevel()
     {
         lvlIndex = 0;
+        SetLvlText(); // сразу показать "1" при возврате на первую платформу
     }
 }

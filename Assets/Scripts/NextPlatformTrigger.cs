@@ -1,4 +1,6 @@
+using TMPro;
 using UnityEngine;
+using UnityEngine.Events;
 
 public class NextPlatformTrigger : MonoBehaviour
 {
@@ -11,6 +13,16 @@ public class NextPlatformTrigger : MonoBehaviour
     [Tooltip("Цена прохода через триггер. Если у игрока недостаточно денег, триггер не сработает.")]
     [SerializeField] private int price = 0;
 
+    [SerializeField] private TMP_Text priceText;
+    [SerializeField] private Color enoughCurrencyColor = Color.green;
+    [SerializeField] private Color notEnoughCurrencyColor = Color.red;
+
+    [Header("Events")]
+    [Tooltip("Вызывается, когда персонаж успешно активировал триггер (прошёл проверку цены).")]
+    [SerializeField] private UnityEvent onActivated = new UnityEvent();
+
+    public UnityEvent OnActivated => onActivated;
+
     private bool _rewardGranted;
 
     private void OnEnable()
@@ -18,7 +30,17 @@ public class NextPlatformTrigger : MonoBehaviour
         if (visual != null)
             visual.SetActive(true);
 
+        ShowPrice(true);
+        if (priceText != null)
+            priceText.text = price.ToString();
+
+        UpdatePriceColor();
         _rewardGranted = false;
+    }
+
+    private void Update()
+    {
+        UpdatePriceColor();
     }
 
     private void OnTriggerEnter(Collider other)
@@ -39,6 +61,7 @@ public class NextPlatformTrigger : MonoBehaviour
                 {
                     // Успешное списание денег
                     GlobalEvents.CurrencySpent.Invoke();
+                    ShowPrice(false);
                 }
             }
             
@@ -49,6 +72,7 @@ public class NextPlatformTrigger : MonoBehaviour
             Transform assemblePoint = playerPositionPoint != null ? playerPositionPoint : transform;
             character.ReturnBonesAndEnableAnimator(assemblePoint);
             GlobalEvents.ShowNextPlatformEvent.Invoke();
+            onActivated.Invoke();
 
             GrantPlatformTriggerReward(character.transform.position);
             return;
@@ -61,6 +85,20 @@ public class NextPlatformTrigger : MonoBehaviour
 
         GrantPlatformTriggerReward(sphere.transform.position);
         GlobalEvents.NextPlatform.Invoke();
+    }
+
+    private void ShowPrice(bool show)
+    {
+        if (priceText == null) return;
+        priceText.gameObject.SetActive(show);
+    }
+
+    private void UpdatePriceColor()
+    {
+        if (priceText == null) return;
+
+        bool enough = price <= 0 || Currency.GetCurrency() >= price;
+        priceText.color = enough ? enoughCurrencyColor : notEnoughCurrencyColor;
     }
 
     private void GrantPlatformTriggerReward(Vector3 userPosition)
